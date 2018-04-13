@@ -4,9 +4,20 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 
-hidden = [9, 32, 128, 256, 3]
+hidden = [1024, 256, 128, 3]
 batch_size = 100
 num_labels=3
+x = tf.placeholder(tf.float32,shape=[None,4])
+y = tf.placeholder(tf.float32,shape=[None,3])
+#
+# l1 = tf.layers.dense(x,125,activation=tf.nn.relu)
+# tmp = tf.layers.dense(l1,125*2,activation=tf.nn.relu)
+# l2 = tf.layers.dense(tmp,3)
+# loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=l2, labels=y))
+# optimizer = tf.train.AdamOptimizer().minimize(loss)
+# print("loss",optimizer)
+# exit()
+
 
 def readcsv(fileName):
     df = pd.read_csv(fileName, sep=',',usecols=range(0,5))
@@ -15,7 +26,7 @@ def readcsv(fileName):
     for i in cols:
         trans[i]=df[i].astype('category')
         trans[i] = trans[i].cat.codes
-    df_train, df_test = train_test_split(trans, test_size=0.1)
+    df_train, df_test = train_test_split(trans, test_size=0.2)
     trans.to_csv('train_temp.csv', index=False)
     npmatrix=trans.as_matrix()
     df_train=df_train.as_matrix()
@@ -37,7 +48,7 @@ def neural_network_model(data):
         "weights" : tf.Variable(tf.random_normal([hidden[-1], num_labels])),
         "biases" : tf.Variable(tf.random_normal([num_labels]))
                         }
-    input_tensor =data
+    input_tensor =x
     for layer in layers:
         v = tf.add(tf.matmul(input_tensor, layer["weights"]), layer["biases"])
         v = tf.nn.relu(v)
@@ -50,12 +61,12 @@ def neural_network_model(data):
 
 def train_neural_network(trainxdata, ckpt_file=None, save=True):
     prediction = neural_network_model(trainxdata)
-    x = tf.placeholder(tf.float32)
-    y = tf.placeholder(tf.float32)
+    # print prediction
+    # exit()
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=y))
     optimizer = tf.train.AdamOptimizer().minimize(cost)
 
-    epochs = 200
+    epochs = 4000
     arr = []
     # plt.ion();
 
@@ -83,25 +94,23 @@ def train_neural_network(trainxdata, ckpt_file=None, save=True):
                     # plt.pause(0.001)
             correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
             accuracy = tf.reduce_mean(tf.cast(correct, "float"))
-            print "Accuracy : {}".format(accuracy.eval({
+            print "Accuracytrain : {}".format(accuracy.eval({
                 x : trainxdata,
                 y : trainydata
             }))
-            if save:
-                saver.save(sess=sess, save_path="./bot.ckpt")
+            print "Accuracy : {}".format(accuracy.eval({
+                x : testxdata,
+                y : testydata
+            }))
+            # if save:
+            #     saver.save(sess=sess, save_path="./bot.ckpt")
         tt = tf.argmax(prediction, 1)
         res = tt.eval(feed_dict = {
             x : testxdata,
             y : testydata
         })
 
-        # cnt = 0
-        # for i in range(ts.size):
-        #    cnt += ts.labels[i][res[i]]
-        #
-        # print cnt, ts.size
-        # # pyplot for error
-        # plt.show(block=True)
+
 
 
 def trnasforming_data(npmatrix):
