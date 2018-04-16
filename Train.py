@@ -4,17 +4,18 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 
-hidden = [1024, 256, 128, 3]
-batch_size = 100
+# hidden = [1024, 256, 128, 3]
+# batch_size = 100
 num_labels=3
 x = tf.placeholder(tf.float32,shape=[None,4])
 y = tf.placeholder(tf.float32,shape=[None,3])
 #
-# l1 = tf.layers.dense(x,125,activation=tf.nn.relu)
-# tmp = tf.layers.dense(l1,125*2,activation=tf.nn.relu)
-# l2 = tf.layers.dense(tmp,3)
-# loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=l2, labels=y))
-# optimizer = tf.train.AdamOptimizer().minimize(loss)
+l1 = tf.layers.dense(x,1024,activation=tf.nn.relu)
+tmp = tf.layers.dense(l1,512,activation=tf.nn.relu)
+l3=tf.layers.dense(tmp,128,activation=tf.nn.relu)
+prediction = tf.layers.dense(l3,3)
+cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=y))
+optimizer = tf.train.AdamOptimizer().minimize(cost)
 # print("loss",optimizer)
 # exit()
 
@@ -26,47 +27,45 @@ def readcsv(fileName):
     for i in cols:
         trans[i]=df[i].astype('category')
         trans[i] = trans[i].cat.codes
-    df_train, df_test = train_test_split(trans, test_size=0.2)
+    df_train, df_test = train_test_split(trans, test_size=0.1)
     trans.to_csv('train_temp.csv', index=False)
     npmatrix=trans.as_matrix()
     df_train=df_train.as_matrix()
     df_test=df_test.as_matrix()
     return npmatrix,df_train,df_test
 
-def neural_network_model(data):
-    layers=[]
-    cols =data.shape[1]
-    for n_nodes in hidden:
-        d = {
-            "weights": tf.Variable(tf.random_normal([cols, n_nodes])),
-            "biases" : tf.Variable(tf.random_normal([n_nodes]))
-            }
-        cols = n_nodes
-        layers.append(d)
-
-        output_layer = {
-        "weights" : tf.Variable(tf.random_normal([hidden[-1], num_labels])),
-        "biases" : tf.Variable(tf.random_normal([num_labels]))
-                        }
-    input_tensor =x
-    for layer in layers:
-        v = tf.add(tf.matmul(input_tensor, layer["weights"]), layer["biases"])
-        v = tf.nn.relu(v)
-        input_tensor = v
-
-    output = tf.add(tf.matmul(input_tensor, output_layer["weights"]), output_layer["biases"])
-    # with tf.Session() as sess:
-    #     sess.run(tf.global_variables_initializer())
-    return output
+# def neural_network_model(data):
+#     layers=[]
+#     cols =data.shape[1]
+#     for n_nodes in hidden:
+#         d = {
+#             "weights": tf.Variable(tf.random_normal([cols, n_nodes])),
+#             "biases" : tf.Variable(tf.random_normal([n_nodes]))
+#             }
+#         cols = n_nodes
+#         layers.append(d)
+#
+#         output_layer = {
+#         "weights" : tf.Variable(tf.random_normal([hidden[-1], num_labels])),
+#         "biases" : tf.Variable(tf.random_normal([num_labels]))
+#                         }
+#     input_tensor =x
+#     for layer in layers:
+#         v = tf.add(tf.matmul(input_tensor, layer["weights"]), layer["biases"])
+#         v = tf.nn.relu(v)
+#         input_tensor = v
+#
+#     output = tf.add(tf.matmul(input_tensor, output_layer["weights"]), output_layer["biases"])
+#     # with tf.Session() as sess:
+#     #     sess.run(tf.global_variables_initializer())
+#     return output
 
 def train_neural_network(trainxdata, ckpt_file=None, save=True):
-    prediction = neural_network_model(trainxdata)
-    # print prediction
-    # exit()
+    # prediction = neural_network_model(trainxdata)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=y))
     optimizer = tf.train.AdamOptimizer().minimize(cost)
 
-    epochs = 4000
+    epochs =1500
     arr = []
     # plt.ion();
 
